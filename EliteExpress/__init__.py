@@ -1,13 +1,15 @@
 import requests
 import random
 
-class getInfo():
+class getinfo:
     def __init__(self, number):
 
         link = f"https://www.elite-co.com/default.aspx?awbno={number}"
         
         Info = requests.get(link)
         Info = Info.text
+        self.recordFound = True
+
         Info = Info.split('<div class="modal-body">')[1]
         Info = Info.split('<style type="text/css">')[0]
         Info = Info.split('\n')
@@ -16,7 +18,7 @@ class getInfo():
             }
 
         self.details = {}
-
+        self.detailsNoTimestamp = []
         for line in range(len(Info)):
         #BEGIN DETECTION
         
@@ -25,13 +27,19 @@ class getInfo():
                 detail = detail.split('>')[1].replace('</p','')
                 timestamp = Info[line+2].strip().split('>')[1].replace('</span','')
                 self.details[detail] = timestamp
+                self.detailsNoTimestamp.append(detail)
                 place = detail.split("-")[0]
                 self.places[place] = "v"
                 
             if 'Delivered To' in Info[line]:
                 self.FirstName = Info[line].split(':')[2].split('<')[0]
+                self.shipmentEnd = Info[line+2].strip().split('>')[1].replace('</span','')
             if '<p id="status">' in Info[line]:
+                
                 self.status = Info[line].split('<p id="status">')[1].split('</p>')[0]
+                if self.status.strip() == "":
+                    self.recordFound = False
+                    #print("Record Is Nonexistent")
                 self.Delivered = 'Delivered' in Info[line]
 
             if '<p id="date">' in Info[line]:
@@ -44,6 +52,15 @@ class getInfo():
                 self.destination = Info[line].split('">')[1].split("</p>")[0]
             if '<p id="peice">' in Info[line]:  #The web developers had a minor spelling issue here manne I cant do anything about it
                 self.count = Info[line].split('">')[1].split("</p>")[0]
+            if 'shipment information received' in Info[line]:
+                self.shipmentStart = Info[line+2].strip().split('>')[1].replace('</span','')
+            if 'pickup booked' in Info[line]:
+                self.shipmentStart = Info[line+2].strip().split('>')[1].replace('</span','')
+        if self.recordFound:
+            if 'pickup booked' not in self.detailsNoTimestamp:
+                if 'shipment information received' not in self.detailsNoTimestamp:
+                    earliestStatus = self.detailsNoTimestamp[-1]
+                    self.shipmentStart = self.details[str(earliestStatus)]
 
 
 #minimum= 1182547000     #  try numbers like 1182547001 if you want to try a sample of how this would turn out
