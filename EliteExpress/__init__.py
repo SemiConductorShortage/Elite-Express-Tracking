@@ -1,7 +1,7 @@
 import requests
 import random
 
-class getinfo:
+class getInfo:
     def __init__(self, number):
 
         link = f"https://www.elite-co.com/default.aspx?awbno={number}"
